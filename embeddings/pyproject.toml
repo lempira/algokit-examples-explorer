@@ -1,0 +1,10 @@
+[project]
+name = "embeddings"
+version = "0.1.0"
+description = "Generate vector embeddings for AlgoKit examples using all-MiniLM-L6-v2"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "polars>=1.35.1",
+    "sentence-transformers>=5.1.2",
+]
