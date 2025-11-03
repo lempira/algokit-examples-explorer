@@ -6,7 +6,7 @@
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify'
 import { searchExamples, getExampleById } from '../services/search.js'
-import { isInitialized as isDbInitialized, getDatabaseStats } from '../services/database.js'
+import { isInitialized as isDbInitialized, getDatabaseStats } from '../db/database.js'
 import { isInitialized as isEmbedderInitialized } from '../services/embedder.js'
 import {
   SearchRequestSchema,

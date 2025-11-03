@@ -5,7 +5,7 @@
  * over AlgoKit examples.
  */
 
-import { getTable } from './database.js'
+import { getTable } from '../db/database.js'
 import { embedQuery } from './embedder.js'
 
 interface AlgoKitExample {
@@ -114,18 +114,16 @@ export async function getExampleById(exampleId: string): Promise<AlgoKitExample 
   try {
     const table = getTable()
 
-    // Filter for exact match on example_id
-    const results = await table
-      .filter(`example_id = '${exampleId}'`)
-      .limit(1)
-      .toArray()
+    // For small datasets, scan all and filter in memory
+    const allResults = await table.search([0]).limit(1000).toArray()
+    const result = allResults.find((r: any) => r.example_id === exampleId)
 
-    if (results.length === 0) {
+    if (!result) {
       console.log(`Example not found: ${exampleId}`)
       return null
     }
 
-    return results[0] as AlgoKitExample
+    return result as AlgoKitExample
   } catch (error) {
     console.error(`Failed to get example ${exampleId}:`, error)
     throw new Error(

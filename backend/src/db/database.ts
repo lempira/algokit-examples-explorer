@@ -9,20 +9,7 @@ import * as lancedb from '@lancedb/lancedb'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import type { Table } from '@lancedb/lancedb'
-
-interface AlgoKitExample {
-  example_id: string
-  repository: string
-  title: string
-  summary: string
-  complexity: string
-  language: string
-  feature_tags: string[]
-  features_to_demonstrate: string[]
-  target_users: string[]
-  folder_name?: string
-  vector: number[] // 384-dimensional embedding
-}
+import { examplesSchema, type AlgoKitExample } from './models.js'
 
 let db: lancedb.Connection | null = null
 let examplesTable: Table | null = null
@@ -66,10 +53,11 @@ export async function initializeDatabase(): Promise<void> {
 
     console.log(`✓ Loaded ${embeddings.length} examples from embeddings.json`)
 
-    // Create table with overwrite mode (recreates on each startup)
-    // This ensures fresh data and proper indexing
+    // Create table with overwrite mode and explicit schema
+    // Explicit schema required to handle empty arrays properly
     examplesTable = await db.createTable('examples', embeddings, {
-      mode: 'overwrite'
+      mode: 'overwrite',
+      schema: examplesSchema
     })
 
     console.log('✓ Created examples table in LanceDB')

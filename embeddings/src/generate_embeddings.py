@@ -167,7 +167,7 @@ def main():
 
     # Define paths
     project_root = Path(__file__).parent.parent
-    input_path = project_root / "data" / "test-examples" / "03-distillation.json"
+    input_path = project_root / "data" / "03-distillation.json"
     output_path = project_root / "output" / "embeddings.json"
 
     logger.info("=" * 50)

@@ -1,6 +1,6 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import { initializeDatabase } from './services/database.js'
+import { initializeDatabase } from './db/database.js'
 import { initializeEmbedder } from './services/embedder.js'
 import { apiRoutes } from './routes/api.js'
 
