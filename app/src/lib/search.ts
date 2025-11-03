@@ -5,7 +5,7 @@
  * for semantic search over AlgoKit examples.
  */
 
-import type { SearchResponse, SearchResult, AlgoKitExample } from './types';
+import type { SearchResponse, SearchResult, AlgoKitExample, HealthResponse } from './types';
 
 // Backend API URL
 const API_URL = 'http://localhost:3001/api';
@@ -92,6 +92,16 @@ export async function getExampleById(exampleId: string): Promise<AlgoKitExample 
     console.error(`Failed to get example ${exampleId}:`, error);
     throw error;
   }
+}
+
+/**
+ * Get backend health status and database stats
+ *
+ * @returns Health response with service status and example count
+ */
+export async function getHealth(): Promise<HealthResponse> {
+  const response = await fetch(`${API_URL}/health`);
+  return await response.json();
 }
 
 /**

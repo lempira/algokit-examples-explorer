@@ -27,3 +27,13 @@ export interface SearchResponse {
   count: number;
   processingTimeMs: number;
 }
+
+export interface HealthResponse {
+  status: string;
+  timestamp: string;
+  services: {
+    database: boolean;
+    embedder: boolean;
+  };
+  examplesCount: number;
+}

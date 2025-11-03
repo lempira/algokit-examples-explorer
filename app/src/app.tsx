@@ -1,5 +1,5 @@
-import { createSignal, Show, For } from "solid-js";
-import { searchExamples } from "./lib/search";
+import { createSignal, onMount, Show, For } from "solid-js";
+import { searchExamples, getHealth } from "./lib/search";
 import type { SearchResult, SearchResponse } from "./lib/types";
 
 export default function App() {
@@ -8,6 +8,16 @@ export default function App() {
   const [searchError, setSearchError] = createSignal<string | null>(null);
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [processingTime, setProcessingTime] = createSignal<number | null>(null);
+  const [examplesCount, setExamplesCount] = createSignal<number | null>(null);
+
+  onMount(async () => {
+    try {
+      const health = await getHealth();
+      setExamplesCount(health.examplesCount);
+    } catch (error) {
+      console.warn('Health check failed:', error);
+    }
+  });
 
   // Handle search
   async function handleSearch() {
@@ -43,6 +53,9 @@ export default function App() {
     <div>
       <h1>AlgoKit Examples Explorer</h1>
       <p>Search for AlgoKit examples using semantic similarity</p>
+      <Show when={examplesCount()}>
+        <p>Searching across {examplesCount()} examples</p>
+      </Show>
 
       {/* Search Form */}
       <div style={{ 'margin-top': '24px' }}>
