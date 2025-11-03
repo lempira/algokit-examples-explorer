@@ -1,5 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { initializeDatabase } from './services/database.js'
+import { initializeEmbedder } from './services/embedder.js'
 
 async function buildServer() {
   const fastify = Fastify({
@@ -11,9 +13,13 @@ async function buildServer() {
     origin: ['http://localhost:3000'] // Frontend development URL
   })
 
+  // Initialize services on startup
+  console.log('\n--- Initializing Services ---')
+  await initializeDatabase()
+  await initializeEmbedder()
+  console.log('--- Services Ready ---\n')
+
   // TODO: Register API routes
-  // TODO: Initialize database service
-  // TODO: Initialize embedder service
 
   // Basic health check endpoint
   fastify.get('/health', async (request, reply) => {
