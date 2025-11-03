@@ -1,31 +1,13 @@
-import { createSignal, onMount, Show, For } from "solid-js";
-import { initializeDatabase } from "./lib/db";
-import { searchExamples, formatResults } from "./lib/search";
-import type { SearchResult } from "./lib/types";
+import { createSignal, Show, For } from "solid-js";
+import { searchExamples } from "./lib/search";
+import type { SearchResult, SearchResponse } from "./lib/types";
 
 export default function App() {
-  const [initStatus, setInitStatus] = createSignal("Initializing...");
-  const [isInitialized, setIsInitialized] = createSignal(false);
-  const [initError, setInitError] = createSignal<string | null>(null);
-
   const [query, setQuery] = createSignal("");
   const [isSearching, setIsSearching] = createSignal(false);
   const [searchError, setSearchError] = createSignal<string | null>(null);
-  const [results, setResults] = createSignal<Array<SearchResult & { similarity: number }>>([]);
-
-  // Initialize database on mount
-  onMount(async () => {
-    try {
-      setInitStatus("Loading database...");
-      await initializeDatabase();
-      setInitStatus("Database ready");
-      setIsInitialized(true);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setInitError(message);
-      setInitStatus("Initialization failed");
-    }
-  });
+  const [results, setResults] = createSignal<SearchResult[]>([]);
+  const [processingTime, setProcessingTime] = createSignal<number | null>(null);
 
   // Handle search
   async function handleSearch() {
@@ -37,14 +19,21 @@ export default function App() {
     setIsSearching(true);
     setSearchError(null);
     setResults([]);
+    setProcessingTime(null);
 
     try {
-      const rawResults = await searchExamples(query(), 10);
-      const formatted = formatResults(rawResults);
-      setResults(formatted);
+      const response = await searchExamples(query(), 10);
+      setResults(response.results);
+      setProcessingTime(response.processingTimeMs);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setSearchError(message);
+
+      // Provide helpful error message if backend is not running
+      if (message.includes('backend') || message.includes('connect')) {
+        setSearchError('Backend API is not running. Start it with: cd backend && npm run dev');
+      } else {
+        setSearchError(message);
+      }
     } finally {
       setIsSearching(false);
     }
@@ -53,85 +42,90 @@ export default function App() {
   return (
     <div>
       <h1>AlgoKit Examples Explorer</h1>
-
-      {/* Initialization Status */}
-      <div>
-        <strong>Status:</strong> {initStatus()}
-        <Show when={initError()}>
-          <div style={{ color: 'red' }}>
-            <strong>Error:</strong> {initError()}
-          </div>
-        </Show>
-      </div>
-
-      <hr />
+      <p>Search for AlgoKit examples using semantic similarity</p>
 
       {/* Search Form */}
-      <Show when={isInitialized()}>
-        <div>
-          <h2>Search Examples</h2>
-          <input
-            type="text"
-            placeholder="Search for AlgoKit examples..."
-            value={query()}
-            onInput={(e) => setQuery(e.currentTarget.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            disabled={isSearching()}
-            style={{ width: '400px', padding: '8px' }}
-          />
-          <button
-            onClick={handleSearch}
-            disabled={isSearching() || !query().trim()}
-            style={{ padding: '8px 16px', 'margin-left': '8px' }}
-          >
-            {isSearching() ? 'Searching...' : 'Search'}
-          </button>
+      <div style={{ 'margin-top': '24px' }}>
+        <input
+          type="text"
+          placeholder="Search for AlgoKit examples..."
+          value={query()}
+          onInput={(e) => setQuery(e.currentTarget.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          disabled={isSearching()}
+          style={{ width: '400px', padding: '8px', 'font-size': '16px' }}
+        />
+        <button
+          onClick={handleSearch}
+          disabled={isSearching() || !query().trim()}
+          style={{ padding: '8px 16px', 'margin-left': '8px', 'font-size': '16px' }}
+        >
+          {isSearching() ? 'Searching...' : 'Search'}
+        </button>
+      </div>
+
+      {/* Search Error */}
+      <Show when={searchError()}>
+        <div style={{ color: 'red', 'margin-top': '16px', padding: '12px', border: '1px solid red', 'background-color': '#fee' }}>
+          <strong>Error:</strong> {searchError()}
         </div>
+      </Show>
 
-        {/* Search Error */}
-        <Show when={searchError()}>
-          <div style={{ color: 'red', 'margin-top': '16px' }}>
-            <strong>Search Error:</strong> {searchError()}
-          </div>
-        </Show>
-
-        {/* Results */}
-        <Show when={results().length > 0}>
-          <div style={{ 'margin-top': '24px' }}>
-            <h3>Results ({results().length})</h3>
-            <For each={results()}>
-              {(result) => (
-                <div style={{
-                  border: '1px solid #ccc',
-                  padding: '16px',
-                  'margin-bottom': '16px'
+      {/* Results */}
+      <Show when={results().length > 0}>
+        <div style={{ 'margin-top': '24px' }}>
+          <h3>
+            Results ({results().length})
+            <Show when={processingTime()}>
+              <span style={{ 'font-weight': 'normal', 'font-size': '14px', color: '#666', 'margin-left': '8px' }}>
+                ({processingTime()}ms)
+              </span>
+            </Show>
+          </h3>
+          <For each={results()}>
+            {(result) => (
+              <div style={{
+                border: '1px solid #ccc',
+                padding: '16px',
+                'margin-bottom': '16px',
+                'border-radius': '4px'
+              }}>
+                <h4 style={{ 'margin-top': '0' }}>{result.title}</h4>
+                <p style={{
+                  'font-weight': 'bold',
+                  color: result.similarity >= 70 ? '#2d7a2d' : result.similarity >= 50 ? '#d97706' : '#666'
                 }}>
-                  <h4>{result.title}</h4>
-                  <p><strong>Similarity:</strong> {result.similarity.toFixed(1)}%</p>
-                  <p>{result.summary}</p>
-                  <div>
-                    <strong>Repository:</strong> {result.repository} |
-                    <strong> Language:</strong> {result.language} |
-                    <strong> Complexity:</strong> {result.complexity}
-                  </div>
-                  <div>
-                    <strong>Tags:</strong> {result.feature_tags.join(', ')}
-                  </div>
-                  <div>
-                    <strong>Target Users:</strong> {result.target_users.join(', ')}
-                  </div>
+                  {result.similarity.toFixed(1)}% match
+                </p>
+                <p>{result.summary}</p>
+                <div style={{ 'margin-top': '8px', 'font-size': '14px', color: '#666' }}>
+                  <strong>Repository:</strong> {result.repository} |{' '}
+                  <strong>Language:</strong> {result.language} |{' '}
+                  <strong>Complexity:</strong> {result.complexity}
                 </div>
-              )}
-            </For>
-          </div>
-        </Show>
+                <div style={{ 'margin-top': '8px' }}>
+                  <strong>Tags:</strong>{' '}
+                  <span style={{ 'font-size': '14px' }}>
+                    {result.feature_tags.join(', ')}
+                  </span>
+                </div>
+                <div style={{ 'margin-top': '4px' }}>
+                  <strong>Target Users:</strong>{' '}
+                  <span style={{ 'font-size': '14px' }}>
+                    {result.target_users.join(', ')}
+                  </span>
+                </div>
+              </div>
+            )}
+          </For>
+        </div>
+      </Show>
 
-        {/* No Results Message */}
-        <Show when={!isSearching() && results().length === 0 && query().trim()}>
-          <div style={{ 'margin-top': '24px' }}>
-            <p>No results found. Try a different search query.</p>
-          </div>
-        </Show>
+      {/* No Results Message */}
+      <Show when={!isSearching() && results().length === 0 && query().trim() && !searchError()}>
+        <div style={{ 'margin-top': '24px', padding: '16px', 'background-color': '#f0f0f0', 'border-radius': '4px' }}>
+          <p>No results found. Try a different search query.</p>
+        </div>
       </Show>
     </div>
   );
