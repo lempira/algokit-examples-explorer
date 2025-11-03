@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { initializeDatabase } from './services/database.js'
 import { initializeEmbedder } from './services/embedder.js'
+import { apiRoutes } from './routes/api.js'
 
 async function buildServer() {
   const fastify = Fastify({
@@ -19,14 +20,29 @@ async function buildServer() {
   await initializeEmbedder()
   console.log('--- Services Ready ---\n')
 
-  // TODO: Register API routes
+  // Register API routes
+  await fastify.register(apiRoutes, { prefix: '/api' })
 
-  // Basic health check endpoint
-  fastify.get('/health', async (request, reply) => {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString()
+  // Custom error handler for consistent error responses
+  fastify.setErrorHandler((error, request, reply) => {
+    request.log.error(error)
+
+    // Validation errors (400)
+    if (error.validation) {
+      reply.code(400).send({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: error.message
+      })
+      return
     }
+
+    // Server errors (500)
+    reply.code(500).send({
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: error.message || 'An unexpected error occurred'
+    })
   })
 
   return fastify
