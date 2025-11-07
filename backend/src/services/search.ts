@@ -79,8 +79,12 @@ export async function searchExamples(
     console.log(`✓ Found ${results.length} results`)
 
     // Step 4: Format results with similarity scores
+    // Convert Apache Arrow Vector objects to plain JavaScript arrays
     const formattedResults: SearchResult[] = results.map((result: any) => ({
       ...result,
+      feature_tags: Array.from(result.feature_tags || []),
+      features_to_demonstrate: Array.from(result.features_to_demonstrate || []),
+      target_users: Array.from(result.target_users || []),
       similarity: distanceToSimilarity(result._distance)
     }))
 
@@ -123,7 +127,13 @@ export async function getExampleById(exampleId: string): Promise<AlgoKitExample 
       return null
     }
 
-    return result as AlgoKitExample
+    // Convert Apache Arrow Vector objects to plain JavaScript arrays
+    return {
+      ...result,
+      feature_tags: Array.from(result.feature_tags || []),
+      features_to_demonstrate: Array.from(result.features_to_demonstrate || []),
+      target_users: Array.from(result.target_users || [])
+    } as AlgoKitExample
   } catch (error) {
     console.error(`Failed to get example ${exampleId}:`, error)
     throw new Error(

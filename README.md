@@ -20,11 +20,13 @@ This project uses a **backend API + frontend client** architecture:
 ### Why This Architecture?
 
 Initially attempted browser-based vector search but discovered:
+
 - ❌ LanceDB doesn't support browser/WASM (requires native Rust bindings)
 - ❌ Loading 25MB embedding model per user was slow
 - ❌ Browser constraints limited functionality
 
 **Solution**: Backend API handles all vector operations
+
 - ✅ LanceDB works perfectly in Node.js
 - ✅ Shared embedding model across all users
 - ✅ ~93% smaller frontend bundle
@@ -62,6 +64,7 @@ Frontend starts on `http://localhost:3000`
 ### 3. Search Examples
 
 Open `http://localhost:3000` and try searching:
+
 - "create algorand account"
 - "smart contract testing"
 - "algorand transactions"
@@ -95,17 +98,20 @@ algokit-examples-explorer/
 ## Technology Stack
 
 ### Backend
+
 - **Framework**: Fastify (high-performance Node.js framework)
 - **Database**: LanceDB (vector database with native Rust bindings)
 - **Embeddings**: Transformers.js with `all-MiniLM-L6-v2` model
 - **Validation**: TypeBox (JSON schema + TypeScript types)
 
 ### Frontend
+
 - **Framework**: SolidJS (reactive UI library)
 - **Build Tool**: Solid Start + Vinxi
 - **HTTP Client**: Native fetch API
 
 ### Embeddings Pipeline
+
 - **Language**: Python
 - **Model**: `sentence-transformers/all-MiniLM-L6-v2`
 - **Vector Dimensions**: 384
@@ -123,6 +129,7 @@ uv run src/generate_embeddings.py
 ```
 
 Outputs `embeddings.json` with:
+
 - 37 AlgoKit examples
 - 384-dimensional normalized vectors
 - Rich text representations (title, summary, tags, etc.)
@@ -130,6 +137,7 @@ Outputs `embeddings.json` with:
 ### 2. Backend Initialization
 
 On startup, backend:
+
 1. Loads embeddings into LanceDB
 2. Downloads and caches embedding model
 3. Starts API server
@@ -153,9 +161,11 @@ Frontend: Display results with match percentage
 ## API Endpoints
 
 ### POST /api/search
+
 Search for examples using semantic similarity.
 
 **Request:**
+
 ```json
 {
   "query": "create algorand account",
@@ -164,6 +174,7 @@ Search for examples using semantic similarity.
 ```
 
 **Response:**
+
 ```json
 {
   "results": [...],
@@ -174,9 +185,11 @@ Search for examples using semantic similarity.
 ```
 
 ### GET /api/examples/:id
+
 Get a specific example by ID.
 
 ### GET /api/health
+
 Health check with service status.
 
 See [backend/README.md](backend/README.md) for full API documentation.
@@ -207,18 +220,19 @@ To use a different embedding model:
 
 ## Performance
 
-| Metric | Before (Browser) | After (Backend API) |
-|--------|-----------------|-------------------|
-| Bundle Size | ~30MB | ~100KB |
-| First Search | 15-30s | 200-500ms |
-| Subsequent Searches | 100-200ms | 200-500ms |
-| Model Loading | Per user | Shared |
+| Metric              | Before (Browser) | After (Backend API) |
+| ------------------- | ---------------- | ------------------- |
+| Bundle Size         | ~30MB            | ~100KB              |
+| First Search        | 15-30s           | 200-500ms           |
+| Subsequent Searches | 100-200ms        | 200-500ms           |
+| Model Loading       | Per user         | Shared              |
 
 ## Deployment
 
 ### Backend
 
 Deploy to any Node.js hosting platform:
+
 - Railway
 - Render
 - Fly.io
@@ -230,6 +244,7 @@ See [backend/README.md](backend/README.md) for deployment details.
 ### Frontend
 
 Deploy to static hosting:
+
 - Vercel
 - Netlify
 - Cloudflare Pages
@@ -239,10 +254,12 @@ Update API URL in `app/src/lib/search.ts` for production.
 ## Data
 
 Currently includes **37 AlgoKit examples** from:
+
 - `algokit-utils-ts` repository
 - `algokit-utils-py` repository
 
 Examples span various:
+
 - **Complexities**: Simple, Intermediate, Complex
 - **Languages**: TypeScript, Python
 - **Features**: Account management, transactions, smart contracts, testing, etc.
@@ -258,6 +275,7 @@ MIT
 ## Contributing
 
 Contributions welcome! Areas for improvement:
+
 - Add more AlgoKit examples
 - Improve search relevance
 - Add filters (language, complexity, repository)

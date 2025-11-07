@@ -10,8 +10,12 @@ async function buildServer() {
   })
 
   // Register CORS plugin
+  // Allow frontend from localhost (dev) or any Cloud Run domain (*.run.app)
   await fastify.register(cors, {
-    origin: ['http://localhost:3000'] // Frontend development URL
+    origin: [
+      'http://localhost:3000',        // Local development
+      /^https:\/\/.*\.run\.app$/      // Any Cloud Run domain
+    ]
   })
 
   // Initialize services on startup
@@ -51,8 +55,13 @@ async function buildServer() {
 async function start() {
   try {
     const server = await buildServer()
-    await server.listen({ port: 3001, host: '0.0.0.0' })
-    console.log('✓ Server listening on http://localhost:3001')
+
+    // Use PORT and HOST from environment variables (Cloud Run compatibility)
+    const port = Number(process.env.PORT) || 3001
+    const host = process.env.HOST || '0.0.0.0'
+
+    await server.listen({ port, host })
+    console.log(`✓ Server listening on http://${host}:${port}`)
   } catch (err) {
     console.error('Failed to start server:', err)
     process.exit(1)

@@ -7,8 +7,10 @@
 
 import type { SearchResponse, SearchResult, AlgoKitExample, HealthResponse } from './types';
 
-// Backend API URL
-const API_URL = 'http://localhost:3001/api';
+// Backend API URL - use environment variable for Cloud Run, fallback to localhost for dev
+const API_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : 'http://localhost:3001/api';
 
 /**
  * Search for AlgoKit examples using semantic similarity

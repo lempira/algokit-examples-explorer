@@ -55,7 +55,7 @@ export async function initializeDatabase(): Promise<void> {
 
     // Create table with overwrite mode and explicit schema
     // Explicit schema required to handle empty arrays properly
-    examplesTable = await db.createTable('examples', embeddings, {
+    examplesTable = await db.createTable('examples', embeddings as any, {
       mode: 'overwrite',
       schema: examplesSchema
     })
