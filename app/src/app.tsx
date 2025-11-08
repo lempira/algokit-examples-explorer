@@ -10,6 +10,8 @@ export default function App() {
   const [processingTime, setProcessingTime] = createSignal<number | null>(null);
   const [examplesCount, setExamplesCount] = createSignal<number | null>(null);
   const [hasSearched, setHasSearched] = createSignal(false);
+  const [expandedCode, setExpandedCode] = createSignal<string | null>(null);
+  console.log({ results });
 
   onMount(async () => {
     try {
@@ -34,6 +36,7 @@ export default function App() {
 
     try {
       const response = await searchExamples(query(), 10);
+      console.log({ response });
       setResults(response.results);
       setProcessingTime(response.processingTimeMs);
     } catch (error) {
@@ -60,6 +63,12 @@ export default function App() {
     setSearchError(null);
     setProcessingTime(null);
     setHasSearched(false);
+    setExpandedCode(null);
+  }
+
+  // Toggle code visibility
+  function toggleCode(exampleId: string) {
+    setExpandedCode(expandedCode() === exampleId ? null : exampleId);
   }
 
   return (
@@ -189,6 +198,52 @@ export default function App() {
                     {result.target_users.join(", ")}
                   </span>
                 </div>
+                <Show when={result.source_code}>
+                  <div style={{ "margin-top": "12px" }}>
+                    <div
+                      onClick={() => toggleCode(result.example_id)}
+                      style={{
+                        display: "flex",
+                        "align-items": "center",
+                        gap: "8px",
+                        cursor: "pointer",
+                        "font-size": "14px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "inline-block",
+                          transform:
+                            expandedCode() === result.example_id
+                              ? "rotate(90deg)"
+                              : "rotate(0deg)",
+                          transition: "transform 0.2s",
+                        }}
+                      >
+                        ▶
+                      </span>
+                      {expandedCode() === result.example_id
+                        ? "Hide Code"
+                        : "View Code"}
+                    </div>
+                    <Show when={expandedCode() === result.example_id}>
+                      <pre
+                        style={{
+                          "margin-top": "8px",
+                          "background-color": "#f5f5f5",
+                          padding: "16px",
+                          "border-radius": "4px",
+                          overflow: "auto",
+                          "max-height": "400px",
+                          "font-size": "13px",
+                          "line-height": "1.5",
+                        }}
+                      >
+                        <code>{result.source_code}</code>
+                      </pre>
+                    </Show>
+                  </div>
+                </Show>
               </div>
             )}
           </For>
