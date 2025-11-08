@@ -13,10 +13,11 @@ export interface AlgoKitExample {
   features_to_demonstrate: string[];
   target_users: string[];
   folder_name?: string;
+  source_code?: string;
   vector?: number[]; // 384-dimensional embedding (not returned from API)
 }
 
-export interface SearchResult extends Omit<AlgoKitExample, 'vector'> {
+export interface SearchResult extends Omit<AlgoKitExample, "vector"> {
   similarity: number; // Similarity percentage (0-100, higher is better)
   _distance: number; // L2 distance (0-2, lower is better)
 }

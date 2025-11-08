@@ -94,6 +94,11 @@ curl -X POST $BACKEND_URL/api/search \
 # Set backend URL from Step 1
 export VITE_API_URL=https://algokit-backend-xxx.run.app
 
+# Or retrieve it if you deployed the backend earlier
+export VITE_API_URL=$(gcloud run services describe algokit-backend \
+  --region us-central1 \
+  --format='value(status.url)')
+
 # Deploy frontend
 ./deploy-frontend.sh
 ```
@@ -125,12 +130,15 @@ Available regions: https://cloud.google.com/run/docs/locations
 
 ### Custom Resource Limits
 
-Edit the deployment scripts to adjust:
+Edit the `cloudbuild.yaml` files to adjust Cloud Run resource settings:
 - `--memory` - RAM allocation (e.g., `2Gi`, `512Mi`)
 - `--cpu` - CPU allocation (e.g., `1`, `2`)
 - `--min-instances` - Minimum instances (0 = scale to zero)
 - `--max-instances` - Maximum instances for auto-scaling
 - `--timeout` - Request timeout in seconds
+
+**Backend**: Edit `backend/cloudbuild.yaml` (Step 3, lines 24-44)
+**Frontend**: Edit `app/cloudbuild.yaml` (Step 3, lines 24-46)
 
 ---
 

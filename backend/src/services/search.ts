@@ -5,33 +5,34 @@
  * over AlgoKit examples.
  */
 
-import { getTable } from '../db/database.js'
-import { embedQuery } from './embedder.js'
+import { getTable } from "../db/database.js";
+import { embedQuery } from "./embedder.js";
 
 interface AlgoKitExample {
-  example_id: string
-  repository: string
-  title: string
-  summary: string
-  complexity: string
-  language: string
-  feature_tags: string[]
-  features_to_demonstrate: string[]
-  target_users: string[]
-  folder_name?: string
-  vector: number[]
+  example_id: string;
+  repository: string;
+  title: string;
+  summary: string;
+  complexity: string;
+  language: string;
+  feature_tags: string[];
+  features_to_demonstrate: string[];
+  target_users: string[];
+  folder_name?: string;
+  source_code?: string;
+  vector: number[];
 }
 
 interface SearchResult extends AlgoKitExample {
-  _distance: number // L2 distance from LanceDB (0-2, lower is better)
-  similarity: number // Similarity percentage (0-100, higher is better)
+  _distance: number; // L2 distance from LanceDB (0-2, lower is better)
+  similarity: number; // Similarity percentage (0-100, higher is better)
 }
 
 export interface SearchResponse {
-  results: SearchResult[]
-  query: string
-  count: number
-  processingTimeMs: number
+  results: SearchResult[];
+  query: string;
+  count: number;
+  processingTimeMs: number;
 }
 
 /**
@@ -45,38 +46,38 @@ export async function searchExamples(
   query: string,
   limit: number = 10
 ): Promise<SearchResponse> {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
   // Validate query
   if (!query || !query.trim()) {
-    throw new Error('Search query cannot be empty')
+    throw new Error("Search query cannot be empty");
   }
 
   if (query.length > 500) {
-    throw new Error('Search query too long (max 500 characters)')
+    throw new Error("Search query too long (max 500 characters)");
   }
 
   // Clamp limit to valid range
-  const clampedLimit = Math.max(1, Math.min(50, limit))
+  const clampedLimit = Math.max(1, Math.min(50, limit));
 
   try {
-    console.log(`Searching for: "${query}" (limit: ${clampedLimit})`)
+    console.log(`Searching for: "${query}" (limit: ${clampedLimit})`);
 
     // Step 1: Convert query to vector embedding
-    const queryVector = await embedQuery(query)
-    console.log('✓ Query embedded')
+    const queryVector = await embedQuery(query);
+    console.log("✓ Query embedded");
 
     // Step 2: Get the database table
-    const table = getTable()
+    const table = getTable();
 
     // Step 3: Perform vector similarity search
-    console.log('Searching database...')
+    console.log("Searching database...");
     const results = await table
       .search(queryVector)
       .limit(clampedLimit)
-      .toArray()
+      .toArray();
 
-    console.log(`✓ Found ${results.length} results`)
+    console.log(`✓ Found ${results.length} results`);
 
     // Step 4: Format results with similarity scores
     // Convert Apache Arrow Vector objects to plain JavaScript arrays
@@ -85,22 +86,24 @@ export async function searchExamples(
       feature_tags: Array.from(result.feature_tags || []),
       features_to_demonstrate: Array.from(result.features_to_demonstrate || []),
       target_users: Array.from(result.target_users || []),
-      similarity: distanceToSimilarity(result._distance)
-    }))
+      similarity: distanceToSimilarity(result._distance),
+    }));
 
-    const processingTimeMs = Date.now() - startTime
+    const processingTimeMs = Date.now() - startTime;
 
     return {
       results: formattedResults,
       query: query.trim(),
       count: formattedResults.length,
-      processingTimeMs
-    }
+      processingTimeMs,
+    };
   } catch (error) {
-    console.error('Search failed:', error)
+    console.error("Search failed:", error);
     throw new Error(
-      `Search query failed: ${error instanceof Error ? error.message : String(error)}`
-    )
+      `Search query failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 
@@ -110,21 +113,23 @@ export async function searchExamples(
  * @param exampleId - The example_id to look up
  * @returns The matching example or null if not found
  */
-export async function getExampleById(exampleId: string): Promise<AlgoKitExample | null> {
+export async function getExampleById(
+  exampleId: string
+): Promise<AlgoKitExample | null> {
   if (!exampleId || !exampleId.trim()) {
-    throw new Error('Example ID cannot be empty')
+    throw new Error("Example ID cannot be empty");
   }
 
   try {
-    const table = getTable()
+    const table = getTable();
 
     // For small datasets, scan all and filter in memory
-    const allResults = await table.search([0]).limit(1000).toArray()
-    const result = allResults.find((r: any) => r.example_id === exampleId)
+    const allResults = await table.search([0]).limit(1000).toArray();
+    const result = allResults.find((r: any) => r.example_id === exampleId);
 
     if (!result) {
-      console.log(`Example not found: ${exampleId}`)
-      return null
+      console.log(`Example not found: ${exampleId}`);
+      return null;
     }
 
     // Convert Apache Arrow Vector objects to plain JavaScript arrays
@@ -132,13 +137,15 @@ export async function getExampleById(exampleId: string): Promise<AlgoKitExample 
       ...result,
       feature_tags: Array.from(result.feature_tags || []),
       features_to_demonstrate: Array.from(result.features_to_demonstrate || []),
-      target_users: Array.from(result.target_users || [])
-    } as AlgoKitExample
+      target_users: Array.from(result.target_users || []),
+    } as AlgoKitExample;
   } catch (error) {
-    console.error(`Failed to get example ${exampleId}:`, error)
+    console.error(`Failed to get example ${exampleId}:`, error);
     throw new Error(
-      `Failed to retrieve example: ${error instanceof Error ? error.message : String(error)}`
-    )
+      `Failed to retrieve example: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 
@@ -159,6 +166,6 @@ export async function getExampleById(exampleId: string): Promise<AlgoKitExample 
 export function distanceToSimilarity(distance: number): number {
   // Convert L2 distance to similarity percentage
   // Formula: similarity = max(0, 100 - (distance * 50))
-  const similarity = 100 - (distance * 50)
-  return Math.max(0, Math.min(100, Math.round(similarity * 10) / 10))
+  const similarity = 100 - distance * 50;
+  return Math.max(0, Math.min(100, Math.round(similarity * 10) / 10));
 }

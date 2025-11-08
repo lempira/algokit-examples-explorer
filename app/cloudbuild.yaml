@@ -1,0 +1,60 @@
+# Cloud Build configuration for AlgoKit Examples Frontend
+# Builds Docker image with VITE_API_URL and deploys to Cloud Run
+
+steps:
+  # Step 1: Build the Docker image with VITE_API_URL as a build arg
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_URL=$_VITE_API_URL'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/algokit-frontend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/algokit-frontend:latest'
+      - '.'
+
+  # Step 2: Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/algokit-frontend:$BUILD_ID'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'algokit-frontend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/algokit-frontend:$BUILD_ID'
+      - '--region'
+      - '$_REGION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '60'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '5'
+
+# Store images in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/algokit-frontend:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/algokit-frontend:latest'
+
+# Substitutions (variables)
+substitutions:
+  _VITE_API_URL: 'REQUIRED'  # Must be provided via --substitutions
+  _REGION: 'us-central1'
+
+# Options
+options:
+  logging: CLOUD_LOGGING_ONLY

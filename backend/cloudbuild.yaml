@@ -1,0 +1,58 @@
+# Cloud Build configuration for AlgoKit Examples Backend
+# Builds Docker image and deploys to Cloud Run
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/algokit-backend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/algokit-backend:latest'
+      - '.'
+
+  # Step 2: Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/algokit-backend:$BUILD_ID'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'algokit-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/algokit-backend:$BUILD_ID'
+      - '--region'
+      - '$_REGION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '300'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+
+# Store images in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/algokit-backend:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/algokit-backend:latest'
+
+# Substitutions (variables)
+substitutions:
+  _REGION: 'us-central1'
+
+# Options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # Faster build for ML model download

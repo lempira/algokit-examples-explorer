@@ -153,20 +153,24 @@ User queries are embedded on-demand using the same model via Transformers.js, en
 
 ### CORS
 
-Currently configured for local development:
+Configured for local development and Cloud Run production:
 ```typescript
-origin: ['http://localhost:3000']
+origin: [
+  'http://localhost:3000',        // Local development
+  /^https:\/\/.*\.run\.app$/      // Any Cloud Run domain
+]
 ```
 
-For production, update in `src/index.ts`.
+Update in [src/index.ts:30](src/index.ts#L30) for other hosting platforms.
 
 ### Port
 
-Default: `3001`
+Default: `3001` (development), uses `PORT` env var (production)
 
-Change in `src/index.ts`:
+Port configuration in [src/index.ts:47](src/index.ts#L47):
 ```typescript
-await server.listen({ port: 3001, host: '0.0.0.0' })
+const port = Number(process.env.PORT) || 3001
+const host = process.env.HOST || '0.0.0.0'
 ```
 
 ## Scripts
@@ -220,31 +224,45 @@ curl http://localhost:3001/api/examples/01-account-creation-and-funding
 
 ## Deployment
 
-### Docker (Recommended)
+### Google Cloud Run (Recommended)
 
-```dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production
-COPY . .
-RUN npm run build
-EXPOSE 3001
-CMD ["npm", "start"]
+The project includes automated deployment with Cloud Build:
+
+```bash
+# From project root
+./deploy-backend.sh
 ```
+
+**What it does:**
+- Builds Docker image with ML model pre-downloaded (prevents cold start delay)
+- Deploys to Cloud Run with optimized settings (1GB RAM, 1 CPU, 0-10 instances)
+- Configures CORS for Cloud Run domains
+- Returns public URL for your backend
+
+See [../DEPLOYMENT.md](../DEPLOYMENT.md) for full deployment guide.
+
+### Docker
+
+Multi-stage Dockerfile with ML model pre-download:
+- See [Dockerfile](Dockerfile) for implementation
+- Pre-downloads `all-MiniLM-L6-v2` model (~90MB) during build
+- Prevents ~15 second cold start delay on first request
 
 ### Environment Variables
 
+- `PORT` - Server port (default: 3001, Cloud Run sets this automatically)
+- `HOST` - Server host (default: 0.0.0.0)
 - `NODE_ENV` - Set to `production` for production builds
-- `PORT` - Override default port (optional)
 
-### Hosting Options
+### Other Hosting Options
 
-- Railway
-- Render
-- Fly.io
-- Google Cloud Run
-- AWS ECS
+Compatible with any Node.js hosting platform:
+- Railway, Render, Fly.io, AWS ECS
+
+Requirements:
+- Node.js ≥22
+- ~300MB RAM (for ML model)
+- Persistent storage not required (uses in-memory LanceDB)
 
 ## License
 

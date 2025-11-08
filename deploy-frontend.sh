@@ -15,7 +15,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo
 
 # Configuration
-PROJECT_ID="${GCP_PROJECT_ID:-}"
+PROJECT_ID="${GCP_PROJECT_ID:-algokit}"
 REGION="${GCP_REGION:-us-central1}"
 SERVICE_NAME="algokit-frontend"
 BACKEND_URL="${VITE_API_URL:-}"
@@ -24,14 +24,6 @@ BACKEND_URL="${VITE_API_URL:-}"
 if ! command -v gcloud &> /dev/null; then
     echo -e "${RED}✗ gcloud CLI not found. Please install it first:${NC}"
     echo "  https://cloud.google.com/sdk/docs/install"
-    exit 1
-fi
-
-# Check if project ID is set
-if [ -z "$PROJECT_ID" ]; then
-    echo -e "${RED}✗ GCP_PROJECT_ID not set${NC}"
-    echo "  Usage: GCP_PROJECT_ID=your-project-id VITE_API_URL=<backend-url> ./deploy-frontend.sh"
-    echo "  Or set it: export GCP_PROJECT_ID=your-project-id"
     exit 1
 fi
 
@@ -59,25 +51,17 @@ echo
 echo -e "${BLUE}→${NC} Setting GCP project..."
 gcloud config set project "$PROJECT_ID"
 
-# Deploy to Cloud Run
-echo -e "${BLUE}→${NC} Deploying frontend to Cloud Run..."
+# Deploy to Cloud Run using Cloud Build
+echo -e "${BLUE}→${NC} Building and deploying frontend to Cloud Run..."
 echo "  This will take a few minutes (building Docker image)..."
 echo "  The backend URL will be baked into the JavaScript bundle."
 echo
 
 cd app
 
-gcloud run deploy "$SERVICE_NAME" \
-    --source . \
-    --platform managed \
-    --region "$REGION" \
-    --allow-unauthenticated \
-    --memory 512Mi \
-    --cpu 1 \
-    --timeout 60 \
-    --min-instances 0 \
-    --max-instances 5 \
-    --set-build-env-vars "VITE_API_URL=$BACKEND_URL"
+gcloud builds submit \
+    --config cloudbuild.yaml \
+    --substitutions _VITE_API_URL="$BACKEND_URL",_REGION="$REGION"
 
 cd ..
 

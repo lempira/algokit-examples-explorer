@@ -135,6 +135,7 @@ def prepare_output(examples: list[dict]) -> list[dict]:
             "features_to_demonstrate": example.get("features_to_demonstrate", []),
             "target_users": example.get("target_users", []),
             "folder_name": example.get("folder"),
+            "source_code": example.get("source_code"),  # Include source code for display
             "vector": example["vector"],  # Required field
         }
         output_examples.append(output_example)

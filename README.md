@@ -229,27 +229,29 @@ To use a different embedding model:
 
 ## Deployment
 
-### Backend
+### Google Cloud Run (Recommended)
 
-Deploy to any Node.js hosting platform:
+The project includes automated deployment scripts for Google Cloud Run:
 
-- Railway
-- Render
-- Fly.io
-- Google Cloud Run
-- AWS ECS
+```bash
+# Deploy backend first
+./deploy-backend.sh
 
-See [backend/README.md](backend/README.md) for deployment details.
+# Deploy frontend with backend URL
+VITE_API_URL=https://your-backend-url.run.app ./deploy-frontend.sh
+```
 
-### Frontend
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide.
 
-Deploy to static hosting:
+### Other Platforms
 
-- Vercel
-- Netlify
-- Cloudflare Pages
+**Backend** can be deployed to any Node.js hosting platform:
+- Railway, Render, Fly.io, AWS ECS
 
-Update API URL in `app/src/lib/search.ts` for production.
+**Frontend** can be deployed to any static hosting platform:
+- Vercel, Netlify, Cloudflare Pages
+
+Set `VITE_API_URL` environment variable at build time to point to your backend.
 
 ## Data
 
